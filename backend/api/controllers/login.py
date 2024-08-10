@@ -1,5 +1,8 @@
 from rest_framework import status, viewsets, permissions
 from django.db import IntegrityError
+from rest_framework.exceptions import NotFound, AuthenticationFailed
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth import logout
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
@@ -36,15 +39,23 @@ class LoginViewSet(viewsets.ModelViewSet):
         if not username or not password:
             return Response({"detail": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            user = get_object_or_404(User, username=username)
+            user = User.objects.get(username=username)
             if not user.check_password(password):
-                return Response({"error": "Invalid password"}, status=status.HTTP_400_BAD_REQUEST)
+                raise AuthenticationFailed("Invalid credentials")
             token, created = Token.objects.get_or_create(user=user)
             if created:
                 token.save()
             serializer = UserSerializer(user, many=False)
             
             return Response({"token": token.key, "user": serializer.data}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        except NotFound as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except ObjectDoesNotExist as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except AuthenticationFailed as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -53,6 +64,7 @@ class LoginViewSet(viewsets.ModelViewSet):
         token = request.auth
         if token is not None:
             try:
+                logout(request=request)
                 token.delete()
                 return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
             except Token.DoesNotExist:

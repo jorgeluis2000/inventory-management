@@ -16,7 +16,7 @@ from api.usecase.product.serializers import (
 from api.usecase.inventory.serializers import InventoryIncrementSerializer
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.all().order_by('id')
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
     filter_backends = [DjangoFilterBackend]
@@ -42,12 +42,9 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'], url_path='increase_inventory', url_name='increase_inventory')
     def increase_inventory(self, request, pk):
+        self.check_permissions(request)
         product = self.get_object()
         amount = request.data.get('count')
-        user = request.user
-        if not user.is_authenticated:
-            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
-
         try:
             product.increase_inventory(int(amount))
             return Response({"detail": "Inventory updated successfully."}, status=status.HTTP_200_OK)
