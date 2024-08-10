@@ -4,14 +4,16 @@ from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.serializers import ValidationError
 from rest_framework.response import Response
-from api.models.product import Product
+from django.db import IntegrityError
+from api.models.inventory import Inventory
 from api.usecase.product.serializers import (
     ProductPagination,
     ProductSerializer,
     ProductFilter,
-    ProductUpdateSerializer
+    ProductUpdateSerializer,
+    Product
     )
-
+from api.usecase.inventory.serializers import InventoryIncrementSerializer
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -26,15 +28,31 @@ class ProductViewSet(viewsets.ModelViewSet):
         """
         if self.action in ['update']:
             return ProductUpdateSerializer
+        elif self.action in ['increase_inventory']:
+            return InventoryIncrementSerializer
         return ProductSerializer
     
     
     def get_permissions(self):
-        if self.action in ['list', 'create', 'update', 'destroy', 'retrieve']:
+        if self.action in ['list', 'create', 'update', 'destroy', 'retrieve', 'increase_inventory']:
             return [permissions.IsAuthenticated()]
         elif self.action in ['partial_update']:
             return [permissions.AllowAny()]
         return super().get_permissions()
+    
+    @action(detail=True, methods=['post'], url_path='increase_inventory', url_name='increase_inventory')
+    def increase_inventory(self, request, pk):
+        product = self.get_object()
+        amount = request.data.get('count')
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            product.increase_inventory(int(amount))
+            return Response({"detail": "Inventory updated successfully."}, status=status.HTTP_200_OK)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     def partial_update(self, request, *args, **kwargs):
         return Response(
@@ -57,3 +75,23 @@ class ProductViewSet(viewsets.ModelViewSet):
             return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def perform_create(self, serializer):
+        try:
+            # Guarda el producto
+            product = serializer.save()
+            # Crea un inventario asociado con el producto recién creado
+            Inventory.objects.create(product_id=product, count=0)
+        except IntegrityError as e:
+            # Maneja la excepción de serial duplicado
+            # Aquí puedes ajustar el mensaje o la lógica según sea necesario
+            raise Response(
+                {"detail": "A product with this serial number already exists."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            # Maneja otras excepciones posibles
+            raise Response(
+                {"detail": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

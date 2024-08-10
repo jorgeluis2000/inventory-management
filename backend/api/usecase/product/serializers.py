@@ -2,12 +2,23 @@ import django_filters
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import serializers
 from api.models.product import Product
+from api.models.inventory import Inventory
 
 class ProductSerializer(serializers.ModelSerializer):
+    count = serializers.SerializerMethodField()
     class Meta:
         model = Product
-        fields = ['id', 'name', 'serial', 'price', 'updated_at', 'created_at']
+        fields = ['id', 'name', 'serial', 'price', 'count', 'updated_at', 'created_at']
         read_only_fields =  ['id', 'created_at', 'updated_at']
+    
+    
+    def get_count(self, obj):
+        # Obtiene el count del Inventory asociado al producto
+        try:
+            inventory = Inventory.objects.get(product_id=obj)
+            return inventory.count
+        except Inventory.DoesNotExist:
+            return 0
  
 class ProductUpdateSerializer(serializers.ModelSerializer):
     class Meta:

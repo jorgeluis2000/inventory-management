@@ -35,16 +35,18 @@ class LoginViewSet(viewsets.ModelViewSet):
         password = request.data.get('password')
         if not username or not password:
             return Response({"detail": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        user = get_object_or_404(User, username=username)
-        if not user.check_password(password):
-            return Response({"error": "Invalid password"}, status=status.HTTP_400_BAD_REQUEST)
-        token, created = Token.objects.get_or_create(user=user)
-        if created:
-            token.save()
-        serializer = UserSerializer(user, many=False)
-        
-        return Response({"token": token.key, "user": serializer.data}, status=status.HTTP_200_OK)
+        try:
+            user = get_object_or_404(User, username=username)
+            if not user.check_password(password):
+                return Response({"error": "Invalid password"}, status=status.HTTP_400_BAD_REQUEST)
+            token, created = Token.objects.get_or_create(user=user)
+            if created:
+                token.save()
+            serializer = UserSerializer(user, many=False)
+            
+            return Response({"token": token.key, "user": serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(methods=['DELETE'], detail=False, url_path='logout', url_name='logout')
     def logout(self, request):
@@ -59,19 +61,20 @@ class LoginViewSet(viewsets.ModelViewSet):
     
     @action(methods=['POST'], detail=False, url_path='refresh-token', url_name='refresh_token', serializer_class=UserLoginRefreshTokenSerializer)
     def refresh_token(self, request):
-        user = request.user
-        if not user.is_authenticated:
-            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            user = request.user
+            if not user.is_authenticated:
+                return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Delete the old token
-        old_token = Token.objects.filter(user=user).first()
-        if old_token:
-            old_token.delete()
+            old_token = Token.objects.filter(user=user).first()
+            if old_token:
+                old_token.delete()
 
-        # Create a new token
-        new_token = Token.objects.create(user=user)
-        new_token.save()
-        return Response({"token": new_token.key}, status=status.HTTP_200_OK)
+            new_token = Token.objects.create(user=user)
+            new_token.save()
+            return Response({"token": new_token.key}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def create(self, request, *args, **kwargs):
         username = request.data.get('username')
@@ -131,17 +134,21 @@ class LoginViewSet(viewsets.ModelViewSet):
         self.check_permissions(request)
         if int(request.user.id) != int(pk):
             return Response({"detail": "You do not have permission to delete this user."}, status=status.HTTP_403_FORBIDDEN)
-
-        user = get_object_or_404(User, pk=pk)
-        user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            user = get_object_or_404(User, pk=pk)
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def retrieve(self, request, pk=None):
         self.check_permissions(request)
 
         if request.user.id != int(pk):
             return Response({"detail": "You do not have permission to view this user."}, status=status.HTTP_403_FORBIDDEN)
-
-        user = get_object_or_404(User, pk=pk)
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
+        try:
+            user = get_object_or_404(User, pk=pk)
+            serializer = UserSerializer(user)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
