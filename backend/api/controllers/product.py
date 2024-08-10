@@ -3,7 +3,6 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
 from api.models.product import Product
 from api.usecase.product.serializers import ProductPagination, ProductSerializer, ProductFilter
 

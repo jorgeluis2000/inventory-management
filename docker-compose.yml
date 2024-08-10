@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  django-app:
+    restart: always
+    container_name: django-app
+    image: my-django-app
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:80"
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: "your-secret-key"
+      DATABASE_URL: "postgres://admin:admin123@django-db:5432/inventory_management"
+      ALLOWED_HOSTS: ""
+      DJANGO_SUPERUSER_USERNAME: "admin"
+      DJANGO_SUPERUSER_EMAIL: "admin@example.com"
+      DJANGO_SUPERUSER_PASSWORD: "adminpassword"
+    depends_on:
+      - django-db
+
+  django-db:
+    container_name: django-db
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_DB: inventory_management
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

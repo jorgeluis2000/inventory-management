@@ -1,0 +1,39 @@
+# Ignorar archivos de Python compilados
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+
+# Ignorar el entorno virtual
+venv/
+env/
+.env
+# Ignorar archivos y directorios relacionados con el control de versiones
+.git
+.gitignore
+
+# Ignorar configuraciones del editor
+.vscode/
+.idea/
+*.swp
+
+# Ignorar archivos de base de datos local
+db.sqlite3
+
+# Ignorar archivos de log
+*.log
+
+# Ignorar archivos temporales
+*.tmp
+*.bak
+*.old
+
+# Ignorar archivos de desarrollo
+.DS_Store
+*.coverage
+coverage.xml
+htmlcov/
+
+# Ignorar archivos de migraciones
+**/migrations/*.py
+!**/migrations/__init__.py
