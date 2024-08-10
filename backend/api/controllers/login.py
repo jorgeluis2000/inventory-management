@@ -34,7 +34,7 @@ class LoginViewSet(viewsets.ModelViewSet):
         username = request.data.get('username')
         password = request.data.get('password')
         if not username or not password:
-            return Response({"error": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
         
         user = get_object_or_404(User, username=username)
         if not user.check_password(password):
@@ -54,14 +54,14 @@ class LoginViewSet(viewsets.ModelViewSet):
                 token.delete()
                 return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
             except Token.DoesNotExist:
-                return Response({"error": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"error": "No token provided."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "No token provided."}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(methods=['POST'], detail=False, url_path='refresh-token', url_name='refresh_token', serializer_class=UserLoginRefreshTokenSerializer)
     def refresh_token(self, request):
         user = request.user
         if not user.is_authenticated:
-            return Response({"error": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
 
         # Delete the old token
         old_token = Token.objects.filter(user=user).first()
@@ -90,15 +90,15 @@ class LoginViewSet(viewsets.ModelViewSet):
                 return Response({'token': token.key}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except IntegrityError:
-            return Response({"error": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     
     def update(self, request, pk):
         self.check_permissions(request)
         if int(request.user.id) != int(pk):
-           return Response({"error": "You do not have permission to update this user."}, status=status.HTTP_403_FORBIDDEN)
+           return Response({"detail": "You do not have permission to update this user."}, status=status.HTTP_403_FORBIDDEN)
         
         password = request.data['password']
         username = request.data['username']
@@ -109,7 +109,7 @@ class LoginViewSet(viewsets.ModelViewSet):
             if serializer.is_valid(raise_exception=True):
                 user_equal = User.objects.filter(username=username).first()
                 if user_equal and user.id != user_equal.id:
-                    return Response({"error": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
                 user.username = username
                 user.email = email
                 if password:
@@ -122,15 +122,15 @@ class LoginViewSet(viewsets.ModelViewSet):
                 return Response({"token": new_token.key, "user": new_serializer.data}, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except IntegrityError:
-            return Response({"error": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     
     def destroy(self, request, pk):
         self.check_permissions(request)
         if int(request.user.id) != int(pk):
-            return Response({"error": "You do not have permission to delete this user."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "You do not have permission to delete this user."}, status=status.HTTP_403_FORBIDDEN)
 
         user = get_object_or_404(User, pk=pk)
         user.delete()
@@ -140,7 +140,7 @@ class LoginViewSet(viewsets.ModelViewSet):
         self.check_permissions(request)
 
         if request.user.id != int(pk):
-            return Response({"error": "You do not have permission to view this user."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail": "You do not have permission to view this user."}, status=status.HTTP_403_FORBIDDEN)
 
         user = get_object_or_404(User, pk=pk)
         serializer = UserSerializer(user)
