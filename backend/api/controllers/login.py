@@ -1,14 +1,16 @@
 from rest_framework import status, viewsets, permissions
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-from api.usecase.login.serializers import UserSerializer, UserLoginSerializer, UserPagination, UserFilter, UserLoginRefreshTokenSerializer, UserSerializerCreated
+from api.usecase.login.serializers import UserSerializer, UserLoginSerializer, UserPagination, UserFilter
+from api.usecase.login.serializers import UserLoginRefreshTokenSerializer, UserSerializerCreated, UserUpdateSerializer
 
 class LoginViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
     pagination_class = UserPagination
     filter_backends = [DjangoFilterBackend]
@@ -17,10 +19,8 @@ class LoginViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list']:
             return [permissions.IsAuthenticated()]
-        elif self.action in ['create', 'login', 'logout', 'refresh_token', 'partial_update']:
+        elif self.action in ['create', 'login', 'logout', 'refresh_token', 'partial_update', 'update', 'destroy', 'retrieve']:
             return [permissions.AllowAny()]
-        elif self.action in ['update', 'destroy', 'retrieve']:
-            return [permissions.IsAuthenticated()]
         return super().get_permissions()
     
     def partial_update(self, request, *args, **kwargs):
@@ -77,47 +77,59 @@ class LoginViewSet(viewsets.ModelViewSet):
         username = request.data.get('username')
         email = request.data.get('email')
         password = request.data['password']
-        if not username or not password or not email:
-            return Response({"error": "Username, Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if not username or not password or not email:
+                return Response({"error": "Username, Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+            serializer = UserSerializerCreated(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                user = User.objects.get(username=username)
+                user.set_password(password)
+                user.save()
+                token = Token.objects.create(user=user)
+                return Response({'token': token.key}, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError:
+            return Response({"error": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        serializer = UserSerializerCreated(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            user = User.objects.get(username=username)
-            user.set_password(password)
-            user.save()
-
-            token = Token.objects.create(user=user)
-            return Response({'token': token.key}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def update(self, request, pk):
         self.check_permissions(request)
-        if request.user.id is pk:
+        if int(request.user.id) != int(pk):
            return Response({"error": "You do not have permission to update this user."}, status=status.HTTP_403_FORBIDDEN)
         
         password = request.data['password']
         username = request.data['username']
         email = request.data['email']
-        user = get_object_or_404(User, pk=pk)
-        user_equal = User.objects.filter(username=username).first()
-        if user_equal and user.id != user_equal.id:
+        try:
+            user = get_object_or_404(User, pk=pk)
+            serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                user_equal = User.objects.filter(username=username).first()
+                if user_equal and user.id != user_equal.id:
+                    return Response({"error": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+                user.username = username
+                user.email = email
+                if password:
+                    user.set_password(password)
+                user.save()
+                Token.objects.filter(user=user).delete()
+                new_token = Token.objects.create(user=user)
+                new_token.save()
+                new_serializer = UserSerializer(user, many=False)
+                return Response({"token": new_token.key, "user": new_serializer.data}, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError:
             return Response({"error": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
-        user.username = username
-        user.email = email
-        if password:
-            user.set_password(password)
-        user.save()
-        # Optionally delete the old token and create a new one
-        Token.objects.filter(user=user).delete()  # This deletes all tokens for this user
-        new_token = Token.objects.create(user=user)
-        new_token.save()
-        new_serializer = UserSerializer(user, many=False)
-        return Response({"token": new_token.key, "user": new_serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
     
     def destroy(self, request, pk):
         self.check_permissions(request)
-        if request.user.id != pk:
+        if int(request.user.id) != int(pk):
             return Response({"error": "You do not have permission to delete this user."}, status=status.HTTP_403_FORBIDDEN)
 
         user = get_object_or_404(User, pk=pk)

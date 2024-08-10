@@ -4,6 +4,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(help_text="")
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password']
@@ -12,10 +13,22 @@ class UserSerializer(serializers.ModelSerializer):
         
 
 class UserSerializerCreated(serializers.ModelSerializer):
+    username = serializers.CharField(help_text="")
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password']
         read_only_fields =  ['id']
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True, 'required': False},
+            'username': {'required': False},
+            'email': {'required': False},
+        }
+
 
 class UserLoginSerializer(serializers.ModelSerializer):
     class Meta:
