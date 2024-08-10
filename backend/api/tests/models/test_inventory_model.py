@@ -15,7 +15,7 @@ class InventoryModelTests(TestCase):
 
     def test_inventory_str_method(self):
         """Prueba el método __str__ del modelo Inventory."""
-        self.assertEqual(str(self.inventory), f"{self.inventory.id} - {self.product.name}")
+        self.assertEqual(str(self.inventory), f"{self.inventory.id} - ({self.inventory.product_id}) - {self.inventory.count}")
 
     def test_update_inventory(self):
         """Prueba que se pueda actualizar un objeto Inventory."""

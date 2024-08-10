@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.test import TestCase
 from api.models.product import Product
+from api.models.inventory import Inventory
 
 class ProductModelTests(TestCase):
 
@@ -10,6 +11,37 @@ class ProductModelTests(TestCase):
             serial='ABC123',
             price=Decimal('29.99')
         )
+    
+    def test_increase_inventory_create(self):
+        """
+        Prueba que un inventario se cree correctamente cuando no existe para el producto.
+        """
+        self.product.increase_inventory(10)
+        inventory = Inventory.objects.get(product_id=self.product)
+        self.assertEqual(inventory.count, 10)
+
+    def test_increase_inventory_update(self):
+        """
+        Prueba que la cantidad en el inventario se actualice correctamente si ya existe.
+        """
+        Inventory.objects.create(product_id=self.product, count=5)
+        self.product.increase_inventory(10)
+        inventory = Inventory.objects.get(product_id=self.product)
+        self.assertEqual(inventory.count, 15)
+
+    def test_increase_inventory_negative_amount(self):
+        """
+        Prueba que se lance una excepción si la cantidad es negativa.
+        """
+        with self.assertRaises(ValueError):
+            self.product.increase_inventory(-5)
+
+    def test_increase_inventory_zero_amount(self):
+        """
+        Prueba que se lance una excepción si la cantidad es cero.
+        """
+        with self.assertRaises(ValueError):
+            self.product.increase_inventory(0)
 
     def test_product_creation(self):
         """Prueba que una instancia de Product se cree correctamente."""
