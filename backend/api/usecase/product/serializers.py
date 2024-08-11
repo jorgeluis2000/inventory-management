@@ -13,7 +13,6 @@ class ProductSerializer(serializers.ModelSerializer):
     
     
     def get_count(self, obj):
-        # Obtiene el count del Inventory asociado al producto
         try:
             inventory = Inventory.objects.get(product_id=obj)
             return inventory.count
