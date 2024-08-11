@@ -75,20 +75,15 @@ class ProductViewSet(viewsets.ModelViewSet):
         
     def perform_create(self, serializer):
         try:
-            # Guarda el producto
             product = serializer.save()
-            # Crea un inventario asociado con el producto recién creado
             Inventory.objects.create(product_id=product, count=0)
         except IntegrityError as e:
-            # Maneja la excepción de serial duplicado
-            # Aquí puedes ajustar el mensaje o la lógica según sea necesario
-            raise Response(
+            return Response(
                 {"detail": "A product with this serial number already exists."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            # Maneja otras excepciones posibles
-            raise Response(
+            return  Response(
                 {"detail": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
