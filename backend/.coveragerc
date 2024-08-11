@@ -1,0 +1,4 @@
+[run]
+# branch = True
+source = api
+omit = migrations/*, backend/*, utils/*, tests/*, admin.py, settings.py, manage.py, __init__.py
