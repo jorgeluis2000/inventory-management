@@ -4,9 +4,10 @@ from rest_framework.decorators import action
 from api.models.payment import Payment
 from api.models.product import Product
 from rest_framework import serializers
-from api.usecase.payment.serializers import (PaymentSerializer, PaymentCreatedSerializer,
+from api.usecase.payment.serializers import (PaymentSerializer, PaymentCreatedSerializer, PaymentDetailRemoveSerializer,
                                              PaymentPagination, PaymentFilter, PaymentCreatedDraftSerializer, PaymentAddDetailSerializer)
 from django_filters.rest_framework import DjangoFilterBackend
+from utils.functions.procedures import create_payment, add_payment_detail, remove_payment_detail, cancel_payment, delete_cancelled_payments, mark_payment_as_paid, delete_cancelled_payments
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
@@ -20,14 +21,16 @@ class PaymentViewSet(viewsets.ModelViewSet):
         """
         Return the appropriate serializer class based on the action.
         """
-        if self.action in ['create']:
+        if self.action in ['create', 'destroy', 'update', 'partial_update', 'delete_cancelled_payments', 'cancel', 'mark_as_paid']:
             return PaymentCreatedDraftSerializer
         elif self.action in ['add_detail']:
             return PaymentAddDetailSerializer
+        elif self.action in ['remove_detail']:
+            return PaymentDetailRemoveSerializer
         return super().get_serializer_class()
 
     def get_permissions(self):
-        if self.action in ['create', 'add_detail', 'remove_detail', 'cancel', 'mark_as_paid']:
+        if self.action in ['create', 'add_detail', 'remove_detail', 'cancel', 'mark_as_paid', 'delete_cancelled_payments']:
             return [permissions.IsAuthenticated()]
         return super().get_permissions()
 
@@ -42,13 +45,19 @@ class PaymentViewSet(viewsets.ModelViewSet):
             {"detail": "PUT method is not allowed for this endpoint."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
+        
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "DELETE method is not allowed for this endpoint."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
     def create(self, request, *args, **kwargs):
+        self.check_permissions(request)
         try:
-            self.check_permissions(request)
-            response_serializer = PaymentCreatedSerializer(data={'status': 1, 'total_amount': 0.0}, partial=True)
-            response_serializer.is_valid(raise_exception=True)
-            response_serializer.save()
+            payment_id = create_payment()
+            payment = Payment.objects.get(id=payment_id)
+            response_serializer = PaymentCreatedSerializer(payment)
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
         except serializers.ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -60,23 +69,20 @@ class PaymentViewSet(viewsets.ModelViewSet):
         self.check_permissions(request)
         payment = self.get_object()
         product_value = request.data.get('product')
-        amount = request.data.get('amount')
         try:
             product_id = int(product_value.split()[0])
-            product = Product.objects.get(id=product_id)
-            payment.add_payment_detail(product, amount)
+            add_payment_detail(payment_id=payment.id, product_id=product_id, quantity=1)
             return Response({"detail": "Payment detail added successfully."}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['post'])
-    def remove_detail(self, request, pk=None):
-        payment = self.get_object()
+    @action(detail=False, methods=['post'])
+    def remove_detail(self, request):
         payment_detail_id = request.data.get('payment_detail_id')
         try:
-            payment.remove_payment_detail(payment_detail_id)
+            remove_payment_detail(int(payment_detail_id))
             return Response({"detail": "Payment detail removed successfully."}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -85,8 +91,19 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def cancel(self, request, pk=None):
         payment = self.get_object()
         try:
-            payment.cancel()
+            cancel_payment(payment_id=int(payment.pk))
+            payment.refresh_from_db()
             return Response({"detail": "Payment canceled successfully."}, status=status.HTTP_200_OK)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['delete'])
+    def delete_cancelled_payments(self, request, pk=None):
+        payment = self.get_object()
+        try:
+            delete_cancelled_payments(payment_id=int(payment.pk))
+            payment.refresh_from_db()
+            return Response({"detail": "Payment deleted successfully."}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -94,7 +111,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def mark_as_paid(self, request, pk=None):
         payment = self.get_object()
         try:
-            payment.mark_as_paid()
+            mark_payment_as_paid(payment_id=int(payment.pk))
             return Response({"detail": "Payment marked as paid successfully."}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
