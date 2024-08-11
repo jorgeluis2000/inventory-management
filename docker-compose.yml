@@ -10,9 +10,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:80"
+    # env_file: ./backend/.env
     environment:
-      DEBUG: "True"
-      SECRET_KEY: "your-secret-key"
+      DEBUG: True
+      ENV_DEFAULT: "True"
+      SECRET_KEY: "django-insecure-jizyjlj_lvn@%m+g43c(s2$7*%4h0kqslhw85zcs#^jgsqjp36"
       DATABASE_URL: "postgres://admin:admin123@django-db:5432/inventory_management"
       ALLOWED_HOSTS: ""
       DJANGO_SUPERUSER_USERNAME: "admin"
@@ -33,6 +35,7 @@ services:
       - 5432:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
   postgres_data:

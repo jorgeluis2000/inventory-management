@@ -31,6 +31,7 @@ db.sqlite3
 # Ignorar archivos de desarrollo
 .DS_Store
 *.coverage
+*.coveragerc
 coverage.xml
 htmlcov/
 

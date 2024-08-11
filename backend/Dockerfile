@@ -12,7 +12,7 @@ RUN  apk update \
 COPY requirements.txt .
 
 # Instala las dependencias
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Copia el contenido del directorio actual al directorio de trabajo en el contenedor
 COPY . .
