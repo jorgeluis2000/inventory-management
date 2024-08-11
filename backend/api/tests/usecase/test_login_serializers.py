@@ -18,7 +18,7 @@ class UserSerializerTests(TestCase):
     def test_user_serializer_valid(self):
         serializer = UserSerializer(instance=self.user)
         data = serializer.data
-        self.assertEqual(set(data.keys()), set(['id', 'username', 'email', 'password']))
+        self.assertEqual(set(data.keys()), set(['id', 'username', 'email']))
         self.assertEqual(data['username'], self.user.username)
         self.assertEqual(data['email'], self.user.email)
         self.assertNotIn('password', data)
@@ -42,7 +42,7 @@ class UserSerializerTests(TestCase):
     def test_user_login_serializer_valid(self):
         serializer = UserLoginSerializer(instance=self.user)
         data = serializer.data
-        self.assertEqual(set(data.keys()), set(['id', 'username', 'email', 'password']))
+        self.assertEqual(set(data.keys()), set(['id', 'username', 'email']))
         self.assertEqual(data['username'], self.user.username)
         self.assertEqual(data['email'], self.user.email)
         self.assertNotIn('password', data)

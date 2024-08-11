@@ -1,6 +1,10 @@
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
+from rest_framework.test import APIClient
+from django.urls import reverse, resolve
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 from rest_framework.utils.serializer_helpers import ReturnDict
 from api.usecase.product.serializers import ProductSerializer, ProductUpdateSerializer, ProductFilter, Product, Inventory
 
@@ -10,6 +14,10 @@ class ProductSerializerTest(TestCase):
         """
         Se ejecuta antes de cada prueba.
         """
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         self.product = Product.objects.create(
             name='Test Product',
             serial='ABC123',
@@ -43,6 +51,10 @@ class ProductUpdateSerializerTest(TestCase):
         """
         Se ejecuta antes de cada prueba.
         """
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         self.product = Product.objects.create(
             name='Test Product',
             serial='ABC123',
@@ -87,6 +99,10 @@ class ProductFilterTest(TestCase):
         """
         Se ejecuta antes de cada prueba.
         """
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         self.product1 = Product.objects.create(
             name='Product One',
             serial='ONE123',
@@ -122,6 +138,10 @@ class ProductPaginationTest(TestCase):
         """
         Se ejecuta antes de cada prueba.
         """
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         for i in range(15):
             Product.objects.create(
                 name=f'Product {i}',
@@ -133,14 +153,15 @@ class ProductPaginationTest(TestCase):
         """
         Verifica que la paginación funcione correctamente.
         """
-        url = '/api/products/?page=1&page_size=10'
-        response = self.client.get(url)
+        url = reverse('products-list')
+        full_url = f'{url}?page=1&page_size=10'
+        response = self.client.get(full_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 10)
         self.assertEqual(response.data['count'], 15)
 
-        url = '/api/products/?page=2&page_size=10'
-        response = self.client.get(url)
+        full_url = f'{url}?page=2&page_size=10'
+        response = self.client.get(full_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 5)
         self.assertEqual(response.data['count'], 15)
