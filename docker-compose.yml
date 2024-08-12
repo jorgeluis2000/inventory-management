@@ -29,10 +29,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     ports:
-      - 8185:80
+      - 8282:8282
+    environment:
+      VITE_API_URL: http://localhost:8000
     
-
   django-db:
     container_name: django-db
     image: postgres:13
