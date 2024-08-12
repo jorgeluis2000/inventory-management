@@ -6,3 +6,10 @@ export type BodyRegister = {
     email: string
     password: string
 }
+
+
+export type BodyAddProduct = {
+    name: string
+    serial: string
+    price?: string
+}

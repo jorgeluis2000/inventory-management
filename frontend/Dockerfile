@@ -1,29 +1,19 @@
-# Usar una imagen de Node.js oficial como base
-FROM node:18-alpine
+FROM node:20-alpine
 
-# Establecer el directorio de trabajo en el contenedor
 WORKDIR /app
+RUN npm i -g pnpm
 
-# Copiar el archivo package.json y package-lock.json al contenedor
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+
+
 COPY package*.json ./
+COPY pnpm-lock.yaml ./
 
-# Instalar dependencias
-RUN npm install
+RUN pnpm i --frozen-lockfile
 
-# Copiar todo el código fuente al contenedor
 COPY . .
 
-# Construir la aplicación
-RUN npm run build
+RUN pnpm build
 
-# Usar una imagen de servidor web para servir la aplicación
-FROM nginx:stable-alpine
-
-# Copiar los archivos construidos de la etapa anterior
-COPY --from=0 /app/dist /usr/share/nginx/html
-
-# Exponer el puerto 80
-EXPOSE 80
-
-# Comando para ejecutar Nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["pnpm", "preview", "--port", "8282", "--host"]

@@ -85,7 +85,7 @@ export async function usePostFetch<E, T extends BodyInit | null | undefined | an
         })
 
         if (!responseFetch.ok) {
-            return { detail: `Upps, hubo un error al momento de tomar tus datos, intenta de nuevo.` }
+            return { detail: `Upps, hubo un error al momento de tomar los datos, intenta de nuevo.` }
         }
 
         return await responseFetch.json() as FetchResponse<E>

@@ -13,10 +13,10 @@ import { CustomNavbar } from '@/utils/components/ui/CustomNavbar.tsx';
 function Router() {
 
   return (
-    <>
-      <div className='min-h-screen dark:bg-gray-800'>
+    <div className='dark:bg-gray-800'>
+      <div className='min-h-screen'>
         <CustomNavbar />
-        <div className='flex flex-col space-y-5 justify-center items-center w-full overflow-x-hidden'>
+        <div className='flex flex-col gap-4 justify-center items-center w-full overflow-x-hidden'>
           <Switch>
             <Route path={"/"}>{<App />}</Route>
           </Switch>
@@ -25,7 +25,7 @@ function Router() {
       <Footer className='mt-10'  container >
         <Footer.Copyright href="https://github.com/jorgeluis2000" by="Jorge Luis Güiza" year={2024} />
       </Footer>
-    </>
+    </div>
   )
 }
 
