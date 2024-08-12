@@ -1,34 +1,27 @@
-import { useState } from 'react'
-import reactLogo from '@/assets/react.svg'
-import viteLogo from '/vite.svg'
+import { Card } from "flowbite-react";
+import { useEffect, useState } from "react";
+import { useGetFetch } from "@/utils/hooks/fetch-data";
+import { PATH_CREDENTIALS, PATH_DEFAULT, SERVER_LOCAL } from "@/utils/constants/server";
+import { DataResponse } from "@/utils/domain/types/fetch.type";
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
+  const myToken = "d67e02282657f06930f292f886d44e70ee714db8"
+  const [listUser, setListUser] = useState<DataResponse>({})
+  useEffect(() => {
+    const exec_data = async() => {
+      const data = await useGetFetch<DataResponse>(SERVER_LOCAL, { path: `${PATH_DEFAULT}${PATH_CREDENTIALS}`, tokenAuth: myToken })
+      setListUser(data)
+    }
+    exec_data()
+  }, [])
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Card className='w-full'>
+      <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+        Noteworthy technology acquisitions 2021 {JSON.stringify(listUser)}
+      </h5>
+
+    </Card>
   )
 }
 
