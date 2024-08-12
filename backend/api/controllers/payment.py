@@ -11,7 +11,7 @@ from utils.functions.procedures import create_payment, add_payment_detail, remov
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
-    queryset = Payment.objects.all().order_by('id')
+    queryset = Payment.objects.all().order_by('-created_at')
     serializer_class = PaymentSerializer
     pagination_class = PaymentPagination
     filter_backends = [DjangoFilterBackend]

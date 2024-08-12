@@ -1,15 +1,16 @@
 import { PATH_DEFAULT, SERVER_LOCAL } from "@/utils/constants/server"
-import { STATUS_PAYMENT, STATUS_PAYMENT_COLOR } from "@/utils/constants/status"
+import { STATUS_PAYMENT, STATUS_PAYMENT_COLOR, STATUS_PAYMENTS } from "@/utils/constants/status"
 import { BodyAddPaymentDetail, BodyRemoveProductToPayment } from "@/utils/domain/types/body.type"
 import { PaymentContent, ProductContent, ResponseDefault, ResponseList, ResponseRemoveProductToPayment } from "@/utils/domain/types/responses.type"
-import { useGetFetch, usePostFetch } from "@/utils/hooks/fetch-data"
+import { useDeleteFetch, useGetFetch, usePostFetch } from "@/utils/hooks/fetch-data"
 import { useGetLocalStorage } from "@/utils/hooks/local-storage"
 import { format } from "@formkit/tempo"
 import { Accordion, Badge, Button, Card, HR, Label, Modal, Select, TextInput } from "flowbite-react"
 import { useEffect, useState } from "react"
 import { HiBadgeCheck, HiClock, HiOutlineExclamationCircle, HiXCircle } from "react-icons/hi"
+import { MdOutlineCancel } from "react-icons/md"
+import { VscIssueDraft } from "react-icons/vsc"
 import { toast } from "react-toastify"
-import { useLocation } from "wouter"
 
 interface Props {
     children?: React.ReactNode
@@ -23,21 +24,20 @@ export default function InvoicesPage(_props: Props) {
     const [openModalAddProductToPayment, setOpenModalAddProductToPayment] = useState(false);
     const [paymentDetail, setPaymentDetail] = useState({ id: "", product: "" })
 
-    const [location, setLocation] = useLocation();
-
-    useEffect(() => {
-        const exec_data = async () => {
-            const myToken = useGetLocalStorage('token')
-            const newList = await useGetFetch<ResponseList<ProductContent>>(SERVER_LOCAL, { path: `${PATH_DEFAULT}/products/`, params: [{ name: 'page_size', value: '100' }], tokenAuth: useGetLocalStorage('token') ?? "" }) as ResponseList<ProductContent>
-            const data = await useGetFetch<ResponseList<PaymentContent>>(SERVER_LOCAL, { path: `${PATH_DEFAULT}/payments/`, tokenAuth: myToken ?? "" }) as ResponseList<PaymentContent>
-            if (newList.results) {
-                setProducts(newList.results)
-            }
-            if (data.results) {
-                setNextPage(data.next)
-                setInvoices(data.results)
-            }
+    const exec_data = async () => {
+        const myToken = useGetLocalStorage('token')
+        const newList = await useGetFetch<ResponseList<ProductContent>>(SERVER_LOCAL, { path: `${PATH_DEFAULT}/products/`, params: [{ name: 'page_size', value: '100' }], tokenAuth: useGetLocalStorage('token') ?? "" }) as ResponseList<ProductContent>
+        const data = await useGetFetch<ResponseList<PaymentContent>>(SERVER_LOCAL, { path: `${PATH_DEFAULT}/payments/`, tokenAuth: myToken ?? "" }) as ResponseList<PaymentContent>
+        if (newList.results) {
+            setProducts(newList.results)
         }
+        if (data.results) {
+            setNextPage(data.next)
+            setInvoices(data.results)
+        }
+    }
+    useEffect(() => {
+        
         exec_data()
     }, [])
 
@@ -66,7 +66,7 @@ export default function InvoicesPage(_props: Props) {
                                 const response = await usePostFetch(SERVER_LOCAL, { path: '/api/v1/payments/', tokenAuth: useGetLocalStorage('token') ?? "" })
                                 toast(response.detail, { type: 'info' })
                                 setOpenModalAddPayment(false)
-                                window.location.reload()
+                                await exec_data()
                             }}>
                                 {"Si, Lo estoy"}
                             </Button>
@@ -111,7 +111,7 @@ export default function InvoicesPage(_props: Props) {
                         }) as ResponseDefault
                         toast(response.detail ?? "Se ha agregado un nuevo producto.", { type: 'info' })
                         setOpenModalAddProductToPayment(false)
-                        window.location.reload()
+                        await exec_data()
                     }}>Agregar producto</Button>
                 </Modal.Footer>
             </Modal>
@@ -175,20 +175,41 @@ export default function InvoicesPage(_props: Props) {
                                     setPaymentDetail((before) => ({ ...before, id: item.id.toString() }))
                                     const response = await usePostFetch(SERVER_LOCAL, { path: `/api/v1/payments/${item.id.toString()}/mark_as_paid/`, tokenAuth: useGetLocalStorage('token') ?? "" })
                                     toast(response.detail, { type: "info" })
-                                    // window.location.reload()
+                                    await exec_data()
                                 }}>
                                     Pagar producto
+                                </Button>
+                                <Button color="gray" onClick={async() => {
+                                    setPaymentDetail((before) => ({ ...before, id: item.id.toString() }))
+                                    const response = await usePostFetch(SERVER_LOCAL, { path: `/api/v1/payments/${item.id.toString()}/cancel/`, tokenAuth: useGetLocalStorage('token') ?? "" })
+                                    toast(response.detail, { type: "info" })
+                                    await exec_data()
+                                }}>
+                                    Cancelar factura
+                                </Button>
+                                <Button color="failure" onClick={async() => {
+                                    setPaymentDetail((before) => ({ ...before, id: item.id.toString() }))
+                                    const response = await useDeleteFetch(SERVER_LOCAL, { path: `/api/v1/payments/${item.id.toString()}/delete_cancelled_payments/`, tokenAuth: useGetLocalStorage('token') ?? "" })
+                                    toast(response.detail, { type: "info" })
+                                    await exec_data()
+                                }}>
+                                    Eliminar factura
                                 </Button>
                             </div>
                             <div className="flex justify-end items-center gap-2 font-medium h-auto">
                                 <div className="">
-                                    <Badge color={STATUS_PAYMENT_COLOR[item.status-1]} icon={HiBadgeCheck}>
+                                    <Badge color={STATUS_PAYMENT_COLOR[item.status-1]} icon={
+                                        STATUS_PAYMENTS.payment === item.status ? HiBadgeCheck
+                                        : STATUS_PAYMENTS.cancel === item.status ? MdOutlineCancel
+                                        : STATUS_PAYMENTS.draft === item.status ? VscIssueDraft
+                                        : undefined
+                                    }>
                                         {STATUS_PAYMENT[item.status-1]}
                                     </Badge>
                                 </div>
                                 <div className="">
                                     <Badge color="gray" icon={HiClock}>
-                                        {format(item.updated_at, "long")}
+                                        {format(item.created_at, "full")}
                                     </Badge>
                                 </div>
                             </div>

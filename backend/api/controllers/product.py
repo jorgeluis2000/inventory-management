@@ -16,7 +16,7 @@ from api.usecase.product.serializers import (
 from api.usecase.inventory.serializers import InventoryIncrementSerializer
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all().order_by('id')
+    queryset = Product.objects.all().order_by('-created_at')
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
     filter_backends = [DjangoFilterBackend]

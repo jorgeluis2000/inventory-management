@@ -7,7 +7,6 @@ import { ProductContent, ResponseAddProduct, ResponseDefault, ResponseList } fro
 import { toast } from "react-toastify";
 import { BodyAddProduct, BodyUpdateCount } from "@/utils/domain/types/body.type";
 import { useGetLocalStorage } from "@/utils/hooks/local-storage";
-import { useLocation } from "wouter";
 import { HiClock } from "react-icons/hi";
 import { format } from "@formkit/tempo";
 
@@ -82,7 +81,6 @@ function App(_props: Props) {
               },
               tokenAuth: useGetLocalStorage('token') ?? ""
             }) as ResponseAddProduct
-            console.log("🚀 ~ updateProduct.id:", updateProduct.id)
             toast(responseUpdate.detail ?? "Se ha actualizado la cantidad del producto.", { type: 'info' })
 
             setOpenModalUpdateProduct(false)
@@ -154,7 +152,7 @@ function App(_props: Props) {
               <div className="flex justify-end font-medium">
                 <div className="max-w-xs">
                   <Badge color="gray" icon={HiClock}>
-                    {format(item.updated_at, "long")}
+                    {format(item.created_at, "full")}
                   </Badge>
                 </div>
               </div>

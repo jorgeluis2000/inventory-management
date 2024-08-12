@@ -9,5 +9,12 @@ export const STATUS_PAYMENT = [
 export const STATUS_PAYMENT_COLOR = [
     'info',
     'gray',
-    'Success',
+    'success',
 ]
+
+
+export const STATUS_PAYMENTS = {
+    draft: 1,
+    cancel: 2,
+    payment: 3,
+}
