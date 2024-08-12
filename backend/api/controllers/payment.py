@@ -18,9 +18,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
     filterset_class = PaymentFilter
 
     def get_serializer_class(self):
-        """
-        Return the appropriate serializer class based on the action.
-        """
         if self.action in ['create', 'destroy', 'update', 'partial_update', 'delete_cancelled_payments', 'cancel', 'mark_as_paid']:
             return PaymentCreatedDraftSerializer
         elif self.action in ['add_detail']:

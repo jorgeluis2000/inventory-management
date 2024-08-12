@@ -6,7 +6,6 @@ from typing import Any
 class MainEnv:
 
     DEBUG: bool
-    ENV_DEFAULT: bool
     SECRET_KEY: str
     DATABASE_URL: Any
     ALLOWED_HOSTS: list

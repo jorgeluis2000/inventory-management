@@ -9,11 +9,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:80"
+      - "8000:8000"
     # env_file: ./backend/.env
     environment:
       DEBUG: True
-      ENV_DEFAULT: "True"
       SECRET_KEY: "django-insecure-jizyjlj_lvn@%m+g43c(s2$7*%4h0kqslhw85zcs#^jgsqjp36"
       DATABASE_URL: "postgres://admin:admin123@django-db:5432/inventory_management"
       ALLOWED_HOSTS: ""
@@ -22,6 +21,17 @@ services:
       DJANGO_SUPERUSER_PASSWORD: "adminpassword"
     depends_on:
       - django-db
+
+  web-app:
+    restart: always
+    container_name: web-app
+    image: my-web-app-react
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - 8185:80
+    
 
   django-db:
     container_name: django-db

@@ -17,8 +17,5 @@ RUN pip install -r requirements.txt
 # Copia el contenido del directorio actual al directorio de trabajo en el contenedor
 COPY . .
 
-# Expone el puerto en el que se ejecutará la aplicación
-EXPOSE 80
-
 # Establece el comando por defecto para ejecutar la aplicación
-CMD ["sh", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py createsuperuser --noinput || true && python manage.py runserver 0.0.0.0:80"]
+CMD ["sh", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py createsuperuser --noinput || true && python manage.py runserver 0.0.0.0:8000"]
