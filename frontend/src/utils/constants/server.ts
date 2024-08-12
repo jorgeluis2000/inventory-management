@@ -1,0 +1,6 @@
+export const PATH_DEFAULT = "/api/v1"
+export const PATH_CREDENTIALS = "/credentials"
+export const PATH_PAYMENTS = "/payments"
+export const PATH_PRODUCTS = "/products"
+export const SERVER_LOCAL: string = import.meta.env.VITE_API_URL ?? ""
+export const SLASH = "/"

@@ -1,5 +1,5 @@
 STATUS_PAYMENT = [
-    (1, 'Edicion'),  # Draft payment
-    (2, 'Cancelado'), # Cancel paymemtn
+    (1, 'Edición'),  # Draft payment
+    (2, 'Cancelado'), # Cancel payment
     (3, 'Pagado'),  # Payment payment
 ]
