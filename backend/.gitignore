@@ -164,3 +164,5 @@ cython_debug/
 # Ignorar archivos de migraciones
 **/migrations/*.py
 !**/migrations/__init__.py
+
+*/templates/web
