@@ -132,28 +132,27 @@ CREATE OR REPLACE PROCEDURE mark_payment_as_paid(IN payment_id INTEGER)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    product_id INTEGER;
+    v_product_id INTEGER;
     inventory_count INTEGER;
 BEGIN
     IF (SELECT status FROM payment WHERE id = payment_id) != 1 THEN
         RAISE EXCEPTION 'Cannot mark a non-draft payment as paid';
     END IF;
 
-    FOR product_id IN (SELECT product_id FROM payment_detail WHERE payment_id = payment_id)
+    FOR v_product_id IN (SELECT pd.product_id FROM payment_detail pd WHERE pd.payment_id = mark_payment_as_paid.payment_id)
     LOOP
-        SELECT count INTO inventory_count FROM inventory WHERE product_id = product_id;
+        SELECT count INTO inventory_count FROM inventory WHERE product_id = v_product_id;
 
         IF inventory_count IS NULL OR inventory_count < 1 THEN
-            RAISE EXCEPTION 'Not enough inventory for product %', product_id;
+            RAISE EXCEPTION 'Not enough inventory for product %', v_product_id;
         END IF;
 
-        UPDATE inventory SET count = count - 1 WHERE product_id = product_id;
+        UPDATE inventory SET count = count - 1 WHERE product_id = v_product_id;
     END LOOP;
 
-    UPDATE payment SET status = 3, updated_at = NOW() WHERE id = payment_id;
+    UPDATE payment SET status = 3, updated_at = NOW() WHERE id = mark_payment_as_paid.payment_id;
 END;
 $$;
-
 
 -- Cancelar un Payment en Estado "Edición"
 

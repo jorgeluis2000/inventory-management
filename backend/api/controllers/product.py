@@ -43,12 +43,14 @@ class ProductViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='increase_inventory', url_name='increase_inventory')
     def increase_inventory(self, request, pk):
         self.check_permissions(request)
-        product = self.get_object()
-        amount = request.data.get('count')
         try:
+            product = self.get_object()
+            amount = request.data.get('count')
             product.increase_inventory(int(amount))
             return Response({"detail": "Inventory updated successfully."}, status=status.HTTP_200_OK)
         except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     def partial_update(self, request, *args, **kwargs):

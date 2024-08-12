@@ -47,9 +47,9 @@ class Product(models.Model):
             raise ValueError("Amount must be positive.")
         
         try:
-            inventory = Inventory.objects.get(product_id=self)
+            inventory = Inventory.objects.get(product_id=self.pk)
         except Inventory.DoesNotExist:
-            inventory = Inventory.objects.create(product_id=self, count=amount)
+            inventory = Inventory.objects.create(product_id=self.pk, count=amount)
         else:
             inventory.count += amount
             inventory.save()

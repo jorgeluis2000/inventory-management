@@ -83,6 +83,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Payment detail removed successfully."}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
@@ -92,6 +94,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
             payment.refresh_from_db()
             return Response({"detail": "Payment canceled successfully."}, status=status.HTTP_200_OK)
         except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
     @action(detail=True, methods=['delete'])
@@ -103,6 +107,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Payment deleted successfully."}, status=status.HTTP_200_OK)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def mark_as_paid(self, request, pk=None):
@@ -111,4 +117,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
             mark_payment_as_paid(payment_id=int(payment.pk))
             return Response({"detail": "Payment marked as paid successfully."}, status=status.HTTP_200_OK)
         except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
