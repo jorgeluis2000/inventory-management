@@ -13,3 +13,15 @@ export type BodyAddProduct = {
     serial: string
     price?: string
 }
+
+export type BodyUpdateCount = {
+    count: number
+}
+
+export type BodyRemoveProductToPayment = {
+    payment_detail_id: number
+}
+
+export type BodyAddPaymentDetail = {
+    product: string
+}

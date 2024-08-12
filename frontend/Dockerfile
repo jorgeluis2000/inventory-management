@@ -14,6 +14,6 @@ RUN pnpm i --frozen-lockfile
 
 COPY . .
 
-RUN pnpm build
+# RUN pnpm build
 
-CMD ["pnpm", "preview", "--port", "8282", "--host"]
+CMD ["pnpm", "dev", "--port", "8282", "--host"]

@@ -8,6 +8,7 @@ import App from './app/App.tsx'
 import 'react-toastify/dist/ReactToastify.css'
 import './index.css'
 import { CustomNavbar } from '@/utils/components/ui/CustomNavbar.tsx';
+import InvoicesPage from './app/Invoices.tsx';
 
 
 function Router() {
@@ -18,7 +19,9 @@ function Router() {
         <CustomNavbar />
         <div className='flex flex-col gap-4 justify-center items-center w-full overflow-x-hidden'>
           <Switch>
-            <Route path={"/"}>{<App />}</Route>
+            <Route path="/" >{<App />}</Route>
+            <Route path="/factura">{<InvoicesPage />}</Route>
+            <Route>404: No such page!</Route>
           </Switch>
         </div>
       </div>

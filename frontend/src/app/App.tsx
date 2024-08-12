@@ -1,17 +1,21 @@
 import { Badge, Button, Card, FloatingLabel, HR, Label, Modal, TextInput } from "flowbite-react";
 import { useEffect, useState } from "react";
-import { useGetFetch, usePostFetch } from "@/utils/hooks/fetch-data";
+import { useGetFetch, usePostFetch, usePutFetch } from "@/utils/hooks/fetch-data";
 import { PATH_DEFAULT, SERVER_LOCAL } from "@/utils/constants/server";
 import './App.css'
-import { ProductContent, ResponseAddProduct, ResponseList } from "@/utils/domain/types/responses.type";
+import { ProductContent, ResponseAddProduct, ResponseDefault, ResponseList } from "@/utils/domain/types/responses.type";
 import { toast } from "react-toastify";
-import { BodyAddProduct } from "@/utils/domain/types/body.type";
+import { BodyAddProduct, BodyUpdateCount } from "@/utils/domain/types/body.type";
 import { useGetLocalStorage } from "@/utils/hooks/local-storage";
 import { useLocation } from "wouter";
 import { HiClock } from "react-icons/hi";
 import { format } from "@formkit/tempo";
 
-function App() {
+interface Props {
+  children?: React.ReactNode
+}
+
+function App(_props: Props) {
   const [products, setProducts] = useState<ProductContent[]>([])
   const [nextPage, setNextPage] = useState<string | null | undefined>(null)
   const [openModalAddProduct, setOpenModalAddProduct] = useState(false);
@@ -19,17 +23,19 @@ function App() {
   const [newName, setNewName] = useState("")
   const [newSerial, setNewSerial] = useState("")
   const [newPrice, setNewPrice] = useState("")
+  const [updateProduct, setUpdateProduct] = useState({ id: "", name: "", serial: "", price: "", count: "" })
 
-  const [location, setLocation] = useLocation();
+  const [openModalUpdateProduct, setOpenModalUpdateProduct] = useState(false)
+
+  const exec_data = async () => {
+    const data = await useGetFetch<ResponseList<ProductContent>>(SERVER_LOCAL, { path: `${PATH_DEFAULT}/products/`, tokenAuth: useGetLocalStorage('token') ?? "" }) as ResponseList<ProductContent>
+    if (data.results) {
+      setNextPage(data.next)
+      setProducts(data.results)
+    }
+  }
 
   useEffect(() => {
-    const exec_data = async () => {
-      const data = await useGetFetch<ResponseList<ProductContent>>(SERVER_LOCAL, { path: `${PATH_DEFAULT}/products/`, tokenAuth: useGetLocalStorage('token') ?? "" }) as ResponseList<ProductContent>
-      if (data.results) {
-        setNextPage(data.next)
-        setProducts(data.results)
-      }
-    }
     exec_data()
   }, [])
   return (
@@ -44,8 +50,48 @@ function App() {
           </Button>
         </div>
       </Card>
+      <Modal show={openModalUpdateProduct} onClose={() => setOpenModalUpdateProduct(false)}>
+        <Modal.Header>Editar Producto</Modal.Header>
+        <Modal.Body>
+          <div className="space-y-6">
+            <FloatingLabel variant="outlined" label="Nombre" defaultValue={updateProduct.name} onChange={(event) => setUpdateProduct((before => ({ ...before, name: event.target.value })))} />
+            <FloatingLabel variant="outlined" type="text" defaultValue={updateProduct.serial} label="Serial" onChange={(event) => setUpdateProduct((before => ({ ...before, serial: event.target.value })))} />
+            <FloatingLabel variant="outlined" type="number" defaultValue={Number(updateProduct.price).toFixed(2)} label="Precio" onChange={(event) => setUpdateProduct((before => ({ ...before, price: event.target.value })))} />
+            <FloatingLabel variant="outlined" type="number" defaultValue={Number(updateProduct.count)} label="Cantidad" onChange={(event) => setUpdateProduct((before => ({ ...before, count: event.target.value })))} />
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button color="gray" onClick={() => setOpenModalUpdateProduct(false)}>
+            Cancelar
+          </Button>
+
+          <Button color="primary" onClick={async () => {
+            const response = await usePutFetch<ResponseAddProduct, BodyAddProduct>(SERVER_LOCAL, {
+              path: `/api/v1/products/${updateProduct.id}/`, data: {
+                name: updateProduct.name,
+                serial: updateProduct.serial,
+                price: updateProduct.price
+              },
+              tokenAuth: useGetLocalStorage('token') ?? ""
+            }) as ResponseAddProduct
+            toast(response.detail ?? "Se ha actualizado el producto.", { type: 'info' })
+
+            const responseUpdate = await usePostFetch<ResponseDefault, BodyUpdateCount>(SERVER_LOCAL, {
+              path: `/api/v1/products/${updateProduct.id.toString()}/increase_inventory/`, data: {
+                count: Number(updateProduct.count)
+              },
+              tokenAuth: useGetLocalStorage('token') ?? ""
+            }) as ResponseAddProduct
+            console.log("🚀 ~ updateProduct.id:", updateProduct.id)
+            toast(responseUpdate.detail ?? "Se ha actualizado la cantidad del producto.", { type: 'info' })
+
+            setOpenModalUpdateProduct(false)
+            await exec_data()
+          }}>Actualizar producto</Button>
+        </Modal.Footer>
+      </Modal>
       <Modal show={openModalAddProduct} onClose={() => setOpenModalAddProduct(false)}>
-        <Modal.Header>Inicia Sección Ahora</Modal.Header>
+        <Modal.Header>Producto</Modal.Header>
         <Modal.Body>
           <div className="space-y-6">
             <FloatingLabel variant="outlined" label="Nombre" onChange={(event) => setNewName(event.target.value)} />
@@ -54,7 +100,7 @@ function App() {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button color="gray" onClick={() => setOpenModalAddProduct(false)}>
+          <Button color="gray" onClick={() => setOpenModalUpdateProduct(false)}>
             Cancelar
           </Button>
           <Button color="primary" onClick={async () => {
@@ -68,7 +114,7 @@ function App() {
             }) as ResponseAddProduct
             toast(response.detail ?? "Se ha agregado un nuevo producto.", { type: 'info' })
             setOpenModalAddProduct(false)
-            setLocation(location, { replace: true })
+            await exec_data()
           }}>Agregar producto</Button>
         </Modal.Footer>
       </Modal>
@@ -90,7 +136,20 @@ function App() {
                   <Label htmlFor={`serial-price-${item.id}`}>Precio del producto</Label>
                   <TextInput type="text" id={`serial-price-${item.id}`} value={`$ ${Number(item.price).toFixed(2)}`} placeholder={`$ ${Number(item.price).toFixed(2)}`} disabled readOnly />
                 </div>
-
+              </div>
+              <div className="flex justify-start items-center gap-2 h-auto">
+                <Button color="success" onClick={() => {
+                  setUpdateProduct({
+                    id: item.id.toString(),
+                    count: item.count.toString(),
+                    name: item.name,
+                    price: item.price,
+                    serial: item.serial
+                  })
+                  setOpenModalUpdateProduct(true)
+                }}>
+                  Actualizar producto
+                </Button>
               </div>
               <div className="flex justify-end font-medium">
                 <div className="max-w-xs">

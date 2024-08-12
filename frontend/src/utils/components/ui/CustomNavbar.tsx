@@ -38,8 +38,8 @@ export function CustomNavbar() {
     }, [])
     return (
         <Navbar fluid rounded border>
-            <Navbar.Brand as={Link} href="https://flowbite-react.com">
-                <img src="/vite.svg" className="mr-3 h-6 sm:h-9" alt="Vite Logo" />
+            <Navbar.Brand as={Link} href="/">
+                <img src="/logo.svg" className="mr-3 h-6 sm:h-9" alt="Vite Logo" />
                 <span className="self-center whitespace-nowrap text-xl font-semibold dark:text-white">Inventory Management</span>
             </Navbar.Brand>
             <div className="flex md:order-2 space-x-3">

@@ -24,6 +24,10 @@ export async function useGetFetch<E>(url: string = import.meta.env.VITE_API_URL,
             headers: myHeaders,
         })
 
+        if (!responseFetch.ok) {
+            return { detail: await responseFetch.text() }
+        }
+
         return await responseFetch.json() as FetchResponse<E>
     } catch (error) {
         console.error(`Fetch error: ${error}`);
@@ -70,7 +74,6 @@ export async function usePostFetch<E, T extends BodyInit | null | undefined | an
             myHeaders.append('Authorization', `Token ${options?.tokenAuth}`)
         }
         const toURL = new URL(`${url}${options?.path ?? ""}`)
-        console.log("🚀 ~ toURL:", toURL.toString())
         if (options?.params) {
             const sizeParams = options.params.length
             for (let index = 0; index < sizeParams; index++) {
