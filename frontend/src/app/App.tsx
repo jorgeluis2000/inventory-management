@@ -6,8 +6,8 @@ import { DataResponse } from "@/utils/domain/types/fetch.type";
 import './App.css'
 
 function App() {
-  const myToken = "d67e02282657f06930f292f886d44e70ee714db8"
-  const [listUser, setListUser] = useState<DataResponse>({})
+  const myToken = "0c2c4af5fd69299f8ac91f225c1d74aae8305d83"
+  const [listUser, setListUser] = useState<DataResponse>()
   useEffect(() => {
     const exec_data = async() => {
       const data = await useGetFetch<DataResponse>(SERVER_LOCAL, { path: `${PATH_DEFAULT}${PATH_CREDENTIALS}`, tokenAuth: myToken })
@@ -18,7 +18,7 @@ function App() {
   return (
     <Card className='w-full'>
       <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-        Noteworthy technology acquisitions 2021 {JSON.stringify(listUser)}
+        Message {JSON.stringify(listUser, null, 2)}
       </h5>
 
     </Card>

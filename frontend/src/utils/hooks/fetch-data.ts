@@ -1,13 +1,16 @@
 import { FetchResponse, OptionsFetch, OptionsFetchData } from "../domain/types/fetch.type";
 
-export async function useGetFetch<E>(url: string, options?: OptionsFetch) {
+export async function useGetFetch<E>(url: string = import.meta.env.VITE_API_URL, options?: OptionsFetch) {
 
     try {
         let myHeaders = new Headers()
-
+        myHeaders.append("Accept", "application/json")
+        myHeaders.append("Content-Type", "application/json")
+        myHeaders.append("Access-Control-Allow-Origin", "*")
         if (options?.tokenAuth) {
-            myHeaders.append('Authorization', `bearer ${options?.tokenAuth}`)
+            myHeaders.append('Authorization', `Token ${options?.tokenAuth}`)
         }
+
         const toURL = new URL(`${url}${options?.path ?? ""}`)
         if (options?.params) {
             const sizeParams = options.params.length
@@ -16,17 +19,10 @@ export async function useGetFetch<E>(url: string, options?: OptionsFetch) {
                 toURL.searchParams.append(element.name, element.value)
             }
         }
-        console.log(`url --> ${toURL}`)
         const responseFetch = await fetch(toURL.toString(), {
             method: "GET",
             headers: myHeaders,
-            credentials: 'include',
         })
-
-        if (!responseFetch.ok) {
-            const errorText = await responseFetch.text();
-    throw new Error(`HTTP error! status: ${responseFetch.status}, message: ${errorText}`);
-        }
 
         return await responseFetch.json() as FetchResponse<E>
     } catch (error) {
@@ -35,9 +31,12 @@ export async function useGetFetch<E>(url: string, options?: OptionsFetch) {
     }
 }
 
-export async function useDeleteFetch<E, T extends BodyInit | null | undefined>(url: string, options?: OptionsFetchData<T>) {
+export async function useDeleteFetch<E, T extends BodyInit | null | undefined | any>(url: string, options?: OptionsFetchData<T>) {
     try {
         let myHeaders = new Headers()
+        myHeaders.append("Accept", "application/json")
+        myHeaders.append("Content-Type", "application/json")
+        myHeaders.append("Access-Control-Allow-Origin", "*")
         if (options?.tokenAuth) {
             myHeaders.append('Authorization', `Token ${options?.tokenAuth}`)
         }
@@ -52,21 +51,26 @@ export async function useDeleteFetch<E, T extends BodyInit | null | undefined>(u
         const responseFetch = await fetch(toURL, {
             method: "DELETE",
             headers: myHeaders,
-            body: options?.data,
+            body: JSON.stringify(options?.data),
         })
         return await responseFetch.json() as FetchResponse<E>
     } catch (error) {
+        console.log("🚀 ~ error:", error)
         return { detail: "Hubo problemas de conexión." }
     }
 }
 
-export async function usePostFetch<E, T extends BodyInit | null | undefined>(url: string, options?: OptionsFetchData<T>) {
+export async function usePostFetch<E, T extends BodyInit | null | undefined | any>(url: string, options?: OptionsFetchData<T>) {
     try {
         let myHeaders = new Headers()
+        myHeaders.append("Accept", "application/json")
+        myHeaders.append("Content-Type", "application/json")
+        myHeaders.append("Access-Control-Allow-Origin", "*")
         if (options?.tokenAuth) {
             myHeaders.append('Authorization', `Token ${options?.tokenAuth}`)
         }
         const toURL = new URL(`${url}${options?.path ?? ""}`)
+        console.log("🚀 ~ toURL:", toURL.toString())
         if (options?.params) {
             const sizeParams = options.params.length
             for (let index = 0; index < sizeParams; index++) {
@@ -77,17 +81,26 @@ export async function usePostFetch<E, T extends BodyInit | null | undefined>(url
         const responseFetch = await fetch(toURL, {
             method: "POST",
             headers: myHeaders,
-            body: options?.data,
+            body: JSON.stringify(options?.data),
         })
+
+        if (!responseFetch.ok) {
+            return { detail: `Upps, hubo un error al momento de tomar tus datos, intenta de nuevo.` }
+        }
+
         return await responseFetch.json() as FetchResponse<E>
     } catch (error) {
+        console.log("🚀 ~ error:", error)
         return { detail: "Hubo problemas de conexión." }
     }
 }
 
-export async function usePutFetch<E, T extends BodyInit | null | undefined>(url: string, options?: OptionsFetchData<T>) {
+export async function usePutFetch<E, T extends BodyInit | null | undefined | any>(url: string, options?: OptionsFetchData<T>) {
     try {
         let myHeaders = new Headers()
+        myHeaders.append("Accept", "application/json")
+        myHeaders.append("Content-Type", "application/json")
+        myHeaders.append("Access-Control-Allow-Origin", "*")
         if (options?.tokenAuth) {
             myHeaders.append('Authorization', `Token ${options?.tokenAuth}`)
         }
@@ -102,10 +115,11 @@ export async function usePutFetch<E, T extends BodyInit | null | undefined>(url:
         const responseFetch = await fetch(toURL, {
             method: "PUT",
             headers: myHeaders,
-            body: options?.data,
+            body: JSON.stringify(options?.data),
         })
         return await responseFetch.json() as FetchResponse<E>
     } catch (error) {
+        console.log("🚀 ~ error:", error)
         return { detail: "Hubo problemas de conexión." }
     }
 }

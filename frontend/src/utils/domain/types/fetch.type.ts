@@ -1,4 +1,4 @@
-export type FetchResponse<T> = T & DataResponse
+export type FetchResponse<T> = DataResponse & T 
 
 export type DataResponse = {
     detail?: string

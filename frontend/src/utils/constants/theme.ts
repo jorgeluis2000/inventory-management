@@ -15,5 +15,5 @@ export const customTheme: CustomFlowbiteTheme = {
             },
             base: "text-base"
         }
-    }
+    },
 };
